@@ -1,5 +1,8 @@
 const User = require('../Modal/model');
+const Parcel = require('../Modal/Parcel');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+
 
 const signToken = id => {
   return jwt.sign({ id }, 'secret', {
@@ -24,7 +27,7 @@ exports.signup = (async (req, res, next) => {
     name: req.body.name,
     email: req.body.email,
     password: req.body.password,
-    age: parseInt(req.body.age),
+    phone: parseInt(req.body.phone),
     address: req.body.address,
 
   });
@@ -46,7 +49,7 @@ exports.signup = (async (req, res, next) => {
 
 
 exports.login = async (req, res, next) => {
-  const { email, password } = req.body;
+  const { email, password } = req.query;
   ///----------check if email and password exist
 
   if (!email || !password) {
@@ -68,11 +71,53 @@ exports.login = async (req, res, next) => {
 
 
   //-------------check if the pasword is correct
-  res.status(201).json({
-    status: 'success',
-    token,
-    data: {
-      user,
-    }
-  });
+  res.send({token: token, user: user});
+};
+
+
+
+// get parcels where status is in transit and phone number is the same as the user
+exports.getParcels = async (req, res, next) => {
+  const { phone } = req.query;
+  const parcels = await Parcel.find({ status: 'in transit', phone: phone });
+  res.send(parcels);
+};
+
+
+exports.getAllParcels = async (req, res, next) => {
+  const { phone } = req.query;
+  const parcels = await Parcel.find({ phone: phone });
+  res.send(parcels);
+};
+
+
+// update the password of the user by getting the email and the new password updateOne
+exports.forgotPassword = async (req, res, next) => {
+  const { email, password } = req.query;
+  const user = await User.findOne({ email: email })
+  if (!user) {
+    res.send('user does not exist');
+  }
+  // delete user and create a new user with the new password and data of the old user
+  await User.deleteOne({ email: email }).then(() => {
+    User.create({
+      name: user.name,
+      email: user.email,
+      password: password,
+      phone: user.phone,
+      address: user.address,
+    }).then(() => {
+      res.send('password updated');
+    })
+  })
+  // const newUser = await User.create({
+  //   name: user.name,
+  //   email: user.email,
+  //   password: password,
+  //   phone: parseInt(user.phone),
+  //   address: user.address,
+  // });
+  // res.send('password updated');
+
+  
 };

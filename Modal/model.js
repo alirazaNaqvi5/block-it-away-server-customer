@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
         minlength: 8,
         select: false
     },
-    age: {
+    phone: {
         type: Number,
         required: [true, 'Please provide your age']
     },
